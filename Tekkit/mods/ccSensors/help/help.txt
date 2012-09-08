@@ -1,0 +1,23 @@
+ccSensors v0.1 ALPHA by yoskaz01
+--------------------------------
+welcome to ccSensors.
+
+check out lua examples in /ccSensors/lua
+
+Getting started:
+
+Items Required: 1xSensor controller,1xComputer Sensor, 1xBlank Transmitter Card,1xAny Sensor Card Module.
+
+STEP 1 - Place a Sensor Controller next to a computer.
+STEP 2 - open the Sensor Controller(Right-Click) and click "Request new Freq"
+STEP 3 - place the Blank Transmitter Card in the slot and click "Encode Transmitter"
+STEP 4 - Place the Computer Sensor(Big headed Stick) anywhere, and put the Transmitter card and sensor card module in the slots
+STEP 5 - open the computer terminal and run the sample program: ccSensors/sensorsConsole
+
+NOTES:
+the following Sensor Modules have a default range of 2 blocks any direction and should be placed near the appropriate targets:
+Inventory SensorModule,Buildcraft SensorModule,IC2 SensorModule.
+Example for appropriate targets: Chest,Combustion Engine, Reactor....
+
+
+full help file will be included in future versions...

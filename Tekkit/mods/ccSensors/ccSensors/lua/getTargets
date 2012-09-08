@@ -1,0 +1,49 @@
+
+local arg = {...};
+local sensor="Sensor";
+local probe= "";
+
+
+os.unloadAPI("sensorsData")
+os.loadAPI("/rom/apis/sensorsData")
+os.unloadAPI("sensors")
+os.loadAPI("/rom/apis/sensors")
+
+local side = sensors.getController()
+local data={};
+
+
+if #arg >0  then
+	sensor = arg[1];
+	if #arg>1 then
+		data.probes=arg[2];
+	else
+		data = sensors.getSensorInfo(side,sensor,"probes")
+	end
+end
+
+
+if data.probes ==nil then
+	print ("Can't find probes for sensor:"..sensor);
+else
+	for p in string.gmatch(data.probes,"%a+") do
+		
+		if p =="TargetInfo" then
+			--local tgInfo = sensors.getSensorReadingAsDict(side,sensor,v,"TargetInfo")
+			--print ("type:"..tgInfo.type);		
+		else
+			local targets = sensors.getAvailableTargetsforProbe(side,sensor,p);
+			if #targets>0 then
+				sensorsUI.printPaged ("[Probe:"..p.. "] [Available Targets:"..#targets.."]");
+				for i,v in ipairs(targets) do
+					sensorsUI.printPaged ("  "..v)
+				end
+			--else
+				--print ("No targets in range for probe:"..p);
+			end
+		end
+	end
+end
+
+
+

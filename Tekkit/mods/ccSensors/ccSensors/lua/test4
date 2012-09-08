@@ -1,0 +1,19 @@
+local sizeX, sizeY = term.getSize()
+os.unloadAPI("sensorsUI")
+os.loadAPI("/rom/apis/sensorsUI")
+os.unloadAPI("sensorsData")
+os.loadAPI("/rom/apis/sensorsData")
+
+
+local side = sensors.getController()
+local sensor = "Sensor";
+
+local target="TileEngine,1241,4,444";
+--local probe="CombustionEngine";
+local probe="SteamEngine";
+
+local e = sensorsData.getProbe("bc","SteamEngine");
+local engine = sensors.getSensorReadingAsDict(side,sensor,target,probe)
+
+print(engine[e.energy.val].."/"..engine[e.energy.maxval]);
+print(engine[e.burn.val].."/"..engine[e.burn.maxval]);

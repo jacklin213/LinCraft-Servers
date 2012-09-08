@@ -1,0 +1,54 @@
+SensorModule cards help page
+----------------------------
+
+
+
+WorldSensor
+--------------------------
+Description: provides basic readings from the MC world.
+Range: not applicable(no range limit)
+Readings: "Sea Level","Light Level","Rain Strength","Raining?","Day/Night","isThunderStorm","SensorHeight"
+
+Inventory Sensor
+--------------------------
+Description: 
+Range: 2
+Readings: "InventoryInfo","InventoryContent"
+
+Buildcraft3 Sensor
+--------------------------
+Description: 
+Range: 2
+Readings:
+Possible targets:
+
+
+Industrialcraft2 Sensor
+--------------------------
+Description: 
+Range: 2
+Readings:
+Possible targets:
+
+Forestry Sensor
+--------------------------
+
+
+Equivalent Exchange Sensor
+--------------------------
+not out yet
+
+
+RedPower2 Sensor
+--------------------------
+not out yet
+
+
+Thaumcraft2
+--------------------------
+not out yet
+
+
+Proximity Sensor
+--------------------------
+not out yet

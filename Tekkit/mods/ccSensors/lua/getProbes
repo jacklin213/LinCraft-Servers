@@ -1,0 +1,54 @@
+--[[
+	Program: getProbes
+	
+	display available probes for the selected sensor or 
+	all connected sensors if no sensor is specified.
+
+	Author: yoskaz01
+	
+	Version: 1
+	
+	API dependencies:
+	sensorsUI
+	
+	Changelog:
+	- initial version
+
+	input:
+	name of a sensor (as set in the sensor GUI)
+
+	output:
+	all available probes for a given sensor
+	
+]]--
+os.unloadAPI("sensorsUI")
+os.loadAPI("/rom/apis/sensorsUI")
+os.unloadAPI("sensors")
+os.loadAPI("/rom/apis/sensors")
+
+local s;
+
+local arg = {...};
+local sizeX, sizeY = term.getSize();
+local side = sensors.getController();
+
+if #arg >0  then
+	s = {arg[1]};
+else
+	--s = {"Sensor"};
+	s = sensors.getSensors(side);
+end
+
+
+for i,sensor in pairs(s) do
+	sensorsUI.printPaged("Sensor:"..sensor);
+	local data = sensors.getSensorInfo(side,sensor,"probes");
+	if data.probes == nil then
+		print("Can't get probe data");
+	else
+		for p in string.gmatch(data.probes,"%a+") do
+			sensorsUI.printPaged(p);
+		end
+	end
+end
+

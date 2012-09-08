@@ -1,0 +1,170 @@
+--[[
+	-console-
+	a sample console program to demonstrate the use of ccSensors lua api as well as 
+	providing quick access to sensor readings.
+
+	-version-
+	3.0
+	
+	-author-
+	Yoskaz01
+	
+	-dependencies-
+	APIs:  sensors,sensorsUI
+	
+	
+	-changelog-
+	
+]]--
+
+
+os.unloadAPI(sensors);
+os.unloadAPI(sensorsUI);
+os.loadAPI("/rom/apis/sensors");
+os.loadAPI("/rom/apis/sensorsUI");
+
+local side = sensors.getController()
+local monside=sensorsUI.getMonitor()
+local pause = sensorsUI.pause
+local selectOpt = sensorsUI.selectOpt
+local top=sensorsUI.writeTop
+local status=sensorsUI.writeBottom
+
+local bDashboard = false
+local done = false
+local done2 =false
+local target= "none"
+local sensor="none"
+local rtype="none"
+local probe="none";
+
+sensor,target,rtype= sensorsUI.loadDashboard()
+	
+-- main menu
+function main()
+	local mDash = "Big Screen: Disabled"
+	if bDashboard then
+		mDash = "Big Screen: Enabled"
+	end
+if  side ~="none" then
+	side = sensors.getController()	
+	local mets = {"Select Sensor","Select Probe","Select Sensor Target","Select Sensor Reading","getReading",mDash,"Save state","quit"}
+	local cur = 1
+	local sensorInfo=nil
+	local sensorType=nil
+	local targets =nil
+
+	
+
+	while done == false  and done2 == false do
+		term.clear()
+		top("Attached:"..side,1)
+		top("Sensor:"..sensor,3)
+		status("target:"..target,1)
+		status("Active Reading:"..rtype,3)
+		act,cur = selectOpt(mets,"Available Actions:")
+		
+		if act =="quit" then
+			term.clear()
+			done=true
+			sensorsUI.unsetLock("dash")
+--[[
+			if (bDashboard) then
+				sensorsUI.setLock("dash")
+				sensorsUI.dualRun( shell.run("shell") ,sensorsUI.dashboard,monside)
+			end
+	]]--		
+		elseif act=="Select Sensor" then
+			term.clear()
+			local sens = sensors.getSensors(side)
+			sensor = selectOpt(sens,"Select Sensor")
+			sensorInfo = sensors.getSensorInfo(side,sensor,"cardType","name","distance","SensorRange","loc","activereading")
+			
+			term.clear()
+			term.setCursorPos(1,1)
+			print("Sensor Information")
+			print("Name:"..sensorInfo.name)
+			print("Type:"..sensorInfo.cardType)
+			print("Distance:"..sensorInfo.distance)
+			print("Range:"..sensorInfo.SensorRange)
+			--sensors.setSensorRange(side,sensor,"10")
+			print()
+			pause("press any key to continue")
+		elseif act=="Select Probe" then
+			term.clear()
+			local data = sensors.getSensorInfo(side,sensor,"probes")
+			if data.probes ~=nil then
+				probes = sensorsUI.split(data.probes,",")
+				probe= selectOpt(probes,"Select Probe")
+				
+				
+				
+			else
+				print ("Can't find probes for sensor:"..sensor);
+				pause("press any key to continue")
+			end
+			
+		elseif act=="Select Sensor Reading" then
+			term.clear()
+			rtype = selectOpt(sensors.getAvailableReadings(side,sensor),"Select Sensor Reading")
+			
+			result = sensors.setActiveReading(side,sensor,rtype)
+			print(result[1])			
+			pause("press any key to continue")
+		elseif act=="getReading" then
+			term.clear()
+			term.setCursorPos(1,1)
+			--[[
+			if sensorInfo.cardType == "IndustrialCraft2 SensorModule" then
+				-- example:
+				result = sensors.getReading(side, sensor,"heat","maxheat","output","chambers")
+			end
+			]]--
+			result = sensors.getReadingAsTable(side, sensor)			
+			
+			
+			print(textutils.pagedTabulate(result))
+			pause("press any key to continue")
+		elseif act=="Select Sensor Target" then
+			term.clear()
+			term.setCursorPos(1,1)
+			targets =nil
+			targets = sensors.getAvailableTargets(side,sensor)
+			target = selectOpt(targets,"Select Sensor Target")
+			result = sensors.setTarget(side,sensor,target)
+			print()
+			print()
+			print("Target set to:"..target)
+			print()
+			pause("press any key to continue")
+		elseif act=="Big Screen: Disabled" then
+			bDashboard=true
+			sensorsUI.saveDashboard(sensor,target,rtype)
+			sensorsUI.setLock("dash")
+			done2=true
+		elseif act=="Big Screen: Enabled" then
+			bDashboard=false
+			done2=true
+			--mDash = "Big Screen: Disabled"
+			sensorsUI.unsetLock("dash")
+		elseif act=="Save state" then
+			sensorsUI.saveDashboard(sensor,target,rtype)
+		end
+	end
+	term.clear()
+	term.setCursorPos(1,1)
+else
+	print ("Can't find attached SensorController.")
+end
+end
+-- main program
+while done == false do
+	done2=false
+	if (bDashboard) then
+		sensorsUI.dualRun(main,sensorsUI.dashboard,monside)
+	else
+		main()
+	end
+
+end
+

@@ -1,0 +1,79 @@
+local sizeX, sizeY = term.getSize()
+os.unloadAPI("sensorsUI")
+os.loadAPI("/rom/apis/sensorsUI")
+os.unloadAPI("sensors")
+os.loadAPI("/rom/apis/sensors")
+os.unloadAPI("sensorsData")
+os.loadAPI("/rom/apis/sensorsData")
+
+local arg = {...};
+
+--[[
+	Dashboard Parameters
+]]--
+local side = sensors.getController()
+-- sensor name
+local sensor= arg[1] or "Sensor";
+
+-- probe index
+local probe="CombustionEngine";
+
+-- target name
+--local target="TileEngine,1240,4,445";
+
+local targets = sensors.getAvailableTargetsforProbe(side,sensor,probe);
+local target=targets[1];
+--print ("target:"..target);
+--sensorsUI.pause("cont")
+
+-- dashboard title
+local title="Combustion Engine Console";
+
+-- refresh timer
+local refresh=2
+
+-- main program
+--[[
+local monside,mon = sensorsUI.getMonitor();
+if monside~="none" then
+	sensorsUI.writeAt(1,sizeY,"Press Spacebar to exit")
+	mon.setTextScale(1);
+	term.redirect(mon);
+end
+]]--
+local done=false;
+local e = sensorsData.getProbe("bc","CombustionEngine");
+local engine = sensors.getSensorReadingAsDict(side,sensor,target,probe)
+local timer1=os.startTimer(refresh)
+local count=1;
+local  progress={"-","\\","|","/"};
+term.clear()
+sensorsUI.writeAt(1,1,title)
+sensorsUI.writeAt(1,sizeY,"Press Spacebar to exit")
+
+while not done do
+	sensorsUI.checkbox(sizeX - string.len(e.active.label)-3,1,e.active.label,engine[e.active.val])
+	sensorsUI.hr(2)
+	sensorsUI.hBar(1,4,10,e.energy.label,engine[e.energy.val] ,engine[e.energy.maxval]);
+	sensorsUI.hBar(1,5,10,e.heat.label,engine[e.heat.val],engine[e.heat.maxval]);
+	sensorsUI.hBar(1,6,10,e.burn.label,engine[e.burn.val],engine[e.burn.maxval]);
+	--sensorsUI.hBar(1,7,15,e.fuel.label,engine[e.fuel.val],engine[e.fuel.maxval]);
+	--sensorsUI.hBar(1,8,15,e.coolant.label,engine[e.coolant.val],engine[e.coolant.maxval]);
+	sensorsUI.hRadio(1,10,e.stage.label,engine[e.stage.val],e.stage.info);
+	sensorsUI.vBar(sizeX-8,15,10,e.fuel.label,engine[e.fuel.val],engine[e.fuel.maxval]);
+	sensorsUI.vBar(sizeX-16,15,10,e.coolant.label,engine[e.coolant.val],engine[e.coolant.maxval]);
+	evt,k = os.pullEvent()
+	if evt=="timer" and k == timer1 then
+		timer1=os.startTimer(refresh)
+		engine = sensors.getSensorReadingAsDict(side,sensor,target,probe);
+	elseif evt=="key" and (k == 28 or k ==57) then
+		done=true
+	end
+	
+	sensorsUI.writeAt(string.len(title)+2,1,progress[count])
+	count = count+1;
+	if count>3 then count=1 end
+
+end
+term.setCursorPos(1,sizeY)
+

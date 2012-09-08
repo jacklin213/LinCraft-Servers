@@ -1,0 +1,115 @@
+local sizeX, sizeY = term.getSize()
+os.unloadAPI("sensorsUI")
+os.loadAPI("/rom/apis/sensorsUI")
+os.unloadAPI("sensorsData")
+os.loadAPI("/rom/apis/sensorsData")
+os.unloadAPI("sensors")
+os.loadAPI("/rom/apis/sensors")
+
+
+--[[
+	Dashboard Parameters
+]]--
+
+local side = sensors.getController();
+
+-- sensor name
+local sensor="Sensor";
+
+
+-- probe name
+local probe="CombustionEngine";
+
+-- targets names per sensor
+local targets=sensors.getAvailableTargetsforProbe(side,sensor,probe);
+
+-- dashboard title
+local title="MultiEngine Dashboard: "..probe;
+
+-- refresh timer
+local refresh=2
+
+-- main program
+
+--local monside,mon = sensorsUI.getMonitor();
+--mon.setTextScale(1);
+
+local done=false;
+local e = sensorsData.getProbe("bc",probe);
+engines={};
+
+--local eTin = sensorsData.getProbe("forestry","engineTin");
+--local eCopper = sensorsData.getProbe("forestry","engineCopper");
+--local eBronze = sensorsData.getProbe("forestry","engineBronze");
+
+--local engine = sensors.getSensorReadingAsDict(side,sensor,target,probe)
+
+
+
+
+for ind,tg in ipairs(targets) do
+	
+	engines[ind] = sensors.getSensorReadingAsDict(side,sensor,targets[ind],probe)
+end
+
+
+local timer1=os.startTimer(refresh)
+local count=1;
+local  progress={"-","\\","|","/"};
+term.clear()
+sensorsUI.writeAt(1,1,title)
+sensorsUI.writeAt(1,sizeY,"Press Spacebar to exit")
+
+while not done do
+
+	--sensorsUI.checkbox(sizeX - string.len(e.active.label)-3,1,e.active.label,engine[e.active.val])
+	sensorsUI.hr(2)
+	local x=1;
+	for ind,tg in ipairs(engines) do
+		--print (engines[ind][e.energy.val].."/"..engines[ind][e.energy.maxval]);
+		sensorsUI.vBar(x,10,5,e.energy.label,engines[ind][e.energy.val] ,engines[ind][e.energy.maxval]);
+		--sensorsUI.vBar(x,sizeX,5,e.fuel.label,engines[ind][e.fuel.val],engines[ind][e.fuel.maxval]);
+		
+		--print(engines[ind][e.fuel.val].."/"..engines[ind][e.fuel.maxval]);
+		x=x+7;
+	end
+
+--[[
+	--sensorsUI.hRadio(sizeX-23,1,"Chambers",reactor[e.size.val],{1,2,3,4,5,6});
+	--sensorsUI.hBar(1,4,10,e.energy.label,reactor[e.energy.val] ,2048);
+	--sensorsUI.hBar(1,4,10,e.heat.label,reactor[e.heat.val],reactor[e.size.val]*1000+10000);
+	--sensorsUI.writeAt(1,6,e.size.label.." : "..reactor[e.size.val]);
+	
+	sensorsUI.writeAt(1,6,"Reactor Components")
+	sensorsUI.hBar(1,7,10,"Coolant Cells",itemMap["Coolant Cell"].qty*10000-itemMap["Coolant Cell"].dmg,itemMap["Coolant Cell"].qty*10000);
+	sensorsUI.hBar(1,8,10,"Heat Dispersers",itemMap["Integrated Heat Disperser"].qty*10000-itemMap["Integrated Heat Disperser"].dmg,itemMap["Integrated Heat Disperser"].qty*10000);
+	sensorsUI.hBar(1,9,10,"Reactor Plating",itemMap["Integrated Reactor Plating"].qty*10000-itemMap["Integrated Reactor Plating"].dmg,itemMap["Integrated Reactor Plating"].qty*10000);
+	sensorsUI.writeAt(1,10,e.energy.label.." : "..reactor[e.energy.val]);
+	
+	sensorsUI.writeAt(1,13,"EU Storage")
+	--sensorsUI.hBar(1,14,10,"MFSU-1",mfsu[eus.storage.val],mfsu[eus.storage.maxval]);
+	--sensorsUI.writeAt(1,14,mfsu[eus.storage.val]);
+	]]--
+
+	
+	evt,k = os.pullEvent()
+	if evt=="timer" and k == timer1 then
+		timer1=os.startTimer(refresh)
+		-- update readings
+		reactor = sensors.getSensorReadingAsDict(side,sensor,target,"Reactor")
+		itemMap = sensors.getItemsInfo({"Coolant Cell","Uranium Cell","Integrated Heat Disperser","Integrated Reactor Plating"},content);
+		for ind,tg in ipairs(targets_mfsu) do
+			mfsu[ind] = sensors.getSensorReadingAsDict(side,sensor,targets_mfsu[ind],"EUStorage")
+		end
+		
+	elseif evt=="key" and (k == 28 or k ==57) then
+		done=true
+	end
+	
+	sensorsUI.writeAt(string.len(title)+2,1,progress[count])
+	count = count+1;
+	if count>3 then count=1 end
+
+end
+term.setCursorPos(1,sizeY)
+

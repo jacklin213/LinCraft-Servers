@@ -1,0 +1,252 @@
+os.unloadAPI("sensors");
+os.unloadAPI("sensorsUI");
+os.loadAPI("/rom/apis/sensors");
+os.loadAPI("/rom/apis/sensorsUI");
+local writeAt=sensorsUI.writeAt
+local tArgs={...};
+local sizeX, sizeY = term.getSize()
+
+
+function dispReadings(x,y,title,tData,maxlen,rows)
+	writeAt(x,y,title..":");
+	local page=1;
+	local erow=rows*page;
+	local r=1;
+	for i,v in pairs(tData) do
+		writeAt(x+1,y+r,string.sub(tostring(i)..":"..tostring(v),1,maxlen));
+		r=r+1
+	end
+
+
+
+end
+
+
+function select(x,y,title,tData,maxlen,rows)
+	local r=nil;
+	writeAt(x,y,title..":"..#tData);
+	
+	local srow=1;
+	local erow=srow+rows;
+	--[[
+	for i=srow,srow+rows-1 do
+		if i>#tData then break; end
+		writeAt(x+2,y+1+i,string.sub(tData[i],1,maxlen-x));
+	end
+	]]--
+	for i,v in pairs(tData) do
+		writeAt(x+2,y+1+i,string.sub(v,1,maxlen));
+	end
+	
+	local done=false;
+	local isel=1;
+	local vsel=1;
+	writeAt(x+1,y+1+isel,"*")
+	repeat
+	evt,k = os.pullEvent()
+	if evt=="key" then
+		writeAt(x+1,y+1+isel," ")
+		if k == 200	then	--up
+			isel=isel-1
+		elseif k== 208 then		--down
+			isel = isel+1
+		elseif k == 28 or k ==57 then	-- selection made	
+			r = tData[isel];
+			done=true;
+		end
+		if isel<1 then isel=#tData 
+		elseif isel > #tData then isel=1 end
+		writeAt(x+1,y+1+isel,"*")
+		
+	end
+	until done
+	
+	return r;
+end
+function statusBar(s)
+	sensorsUI.clearArea(1,sizeY,sizeX,sizeY)
+	writeAt(1,sizeY,s);
+end
+function updateState(x,y,s,p,t)
+	local maxlen = x+20 - (x+1+7);
+	fillArea(x,y+11,x+20,sizeY-1,"|");
+	writeAt(x+1,y+12,"Sensor:"..string.sub(s,1,maxlen))
+	writeAt(x+1,y+13,"Probe :"..string.sub(p,1,maxlen))
+	writeAt(x+1,y+14,"Target:"..string.sub(t,1,maxlen))
+
+	
+	sensorsUI.saveDashboard(s,p,t)
+end
+
+function main(x,y,title,side)
+	local tOpts={"Select Sensor","Select Probe","Select Target","getReading","quit"}
+	local tOptsD={"Select a Sensor from connected sensors in range",
+				  "Select a probe from current sensor",
+				  "Select target for current sensor and probe",
+				  "Display readings",
+				  "exit console",
+				 }
+	local sSensor,sProbe,sTarget = sensorsUI.loadDashboard()
+	--local sSensor="none"
+	--local sProbe="none"
+	--local sTarget="none"
+	
+	--[[
+	local tOpts={"Select Sensor"};
+	if sSensor ~="none" then
+		tOpts[2] ="Select Probe";
+	end
+	]]--
+	local menuX = (20+x)/2-string.len(tOpts[1])/2+x;
+	local isel=1
+	local done=false;
+	local data={};
+	sensorsUI.writeAt(sizeX/2-string.len(title)/2,1,title);
+
+--	sensorsUI.vr(sizeX/2,4,10);
+
+	--menu
+	fillArea(x,y,x+20,y+9,"|");
+	writeAt(menuX,y+2,tOpts[1])
+	for mi=1,#tOpts do
+		writeAt(menuX,y+1+mi,tOpts[mi]);
+	end
+	statusBar(tOptsD[isel]);
+	
+	-- state 
+	if sSensor~="none" and  sProbe~="none" and  sTarget~="none" then
+		updateState(x,y,sSensor,sProbe,sTarget);
+	end
+	
+	
+	writeAt(menuX-1,y+1+isel,"*")
+	repeat
+	evt,k = os.pullEvent()
+	if evt=="key" then
+		writeAt(menuX-1,y+1+isel," ")
+		if k == 200	then	--up
+			isel=isel-1
+		elseif k== 208 then		--down
+			isel = isel+1
+		elseif k == 28 or k ==57 then	-- selection made
+			if isel==1 then			-- select sensor
+				data = sensors.getSensors(side)
+				fillArea(x+20+3,y,sizeX-1,y+#data+4,"|");
+				
+				sSensor = select(x+20+3+1,y+1,"Available Sensors",data,sizeX-2,sizeY-3);
+				sProbe="none";
+				sTarget="none";
+				sensorsUI.clearArea(x+20+3,y,sizeX-1,y+#data+4);
+				updateState(x,y,sSensor,sProbe,sTarget);
+				isel = isel+1;
+	-- get sensor type
+	--"cardType","name","distance","SensorRange","loc"
+	--local cardInfo = sensors.getSensorInfo(side,sSensor,"cardType");
+	--writeAt(x,y+10,string.sub(cardInfo.cardType,1,string.find(cardInfo.cardType," ")));
+				
+			elseif isel==2 then		-- select probe
+				
+				data =sensors.getProbes(side,sSensor);
+				fillArea(x+20+3,y,sizeX-1,y+#data+4,"|");
+				sProbe = select(x+20+3+1,y+1,"Available Probes",data,sizeX-2,sizeY-3);
+				sTarget="none";
+				updateState(x,y,sSensor,sProbe,sTarget);
+				sensorsUI.clearArea(x+20+3,y,sizeX-1,y+#data+4);
+				isel = isel+1;
+			elseif isel ==3 then 	-- select target
+				data = sensors.getAvailableTargetsforProbe(side,sSensor,sProbe);
+				if #data==0 then 
+					statusBar("No Relevant targets found!")
+				
+				else
+				fillArea(x+20+3,y,sizeX-1,y+#data+4,"|");
+				sTarget = select(x+20+3+1,y+1,"Available Targets",data,sizeX-3,sizeY-3);
+				updateState(x,y,sSensor,sProbe,sTarget);
+				sensorsUI.clearArea(x+20+3,y,sizeX-1,y+#data+4);
+				isel = isel+1;
+				end
+			elseif isel==4 then		-- getReading
+				
+				data = sensors.getSensorReadingAsDict(side,sSensor,sTarget,sProbe);
+				fillArea(x+20+3,y,sizeX-1,sizeY-1,"|");
+				dispReadings(x+20+3+1,y+1,"Readings",data,sizeX-3,sizeY-3);
+				--for i,v in pairs(data) do
+				--	sensorsUI.printPaged("    "..tostring(i)..":"..tostring(v));
+				--end
+			elseif isel==5 then done=true end
+		end
+		
+		
+		if isel<1 then isel=#tOpts 
+		elseif isel > #tOpts then isel=1 
+		elseif sSensor=="none" and isel~= 5 then isel=1	
+		elseif sProbe=="none" and isel>2 and isel~= 5 then isel=2
+		end
+		statusBar(tOptsD[isel]);
+		
+		writeAt(menuX-1,y+1+isel,"*")
+		
+	end
+	until done
+
+end
+function fillArea(x1,y1,x2,y2,cBorder) 
+
+	if y2>=sizeY-1 then y2=sizeY-1 end
+	if x2>=sizeX then x2=sizeX end
+
+	if cBorder =="|" then
+		cBorderSide="-";
+	else	
+		cBorderSide=cBorder;
+	end
+	term.setCursorPos(x1,y1)
+	term.write("/")
+	term.write(string.rep(cBorderSide,x2-x1-1));
+	term.write("\\")
+	term.setCursorPos(x1,y2)
+	term.write("\\")
+	term.write(string.rep(cBorderSide,x2-x1-1));
+	term.write("/")
+	for y=y1+1,y2-1 do
+		term.setCursorPos(x1,y)
+		term.write(cBorder)
+		term.write(string.rep(" ",x2-x1-1));
+		term.write(cBorder)
+	end
+	
+
+end
+
+
+
+local side = sensors.getController()
+local monside,mon =sensorsUI.getMonitor()
+
+local sensor="none"
+local probe="none"
+local target= "none"
+local title="ccSensors Console Program v3"
+
+local done=false
+term.clear();
+
+
+
+main(1,2,title,side)
+--clearArea(10,10,15,15);
+--repeat
+
+
+--until done
+
+term.setCursorPos(1,sizeY);
+--[[
+/---------------------------\
+ Select Sensor
+
+
+
+
+]]--
+

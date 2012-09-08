@@ -1,0 +1,17 @@
+
+os.unloadAPI("sensorsUI")
+os.loadAPI("/rom/apis/sensorsUI")
+os.unloadAPI("sensors")
+os.loadAPI("/rom/apis/sensors")
+
+
+local arg = {...};
+local sizeX, sizeY = term.getSize();
+local side = sensors.getController();
+local data = sensors.getSensors(side)
+
+for i,v in pairs(data) do
+	sensorsUI.printPaged(i..":"..tostring(v));
+end
+
+
